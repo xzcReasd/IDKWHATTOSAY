@@ -1,5 +1,3 @@
--- VARIABLES TABLE TEMPLATE FOR LUAU EXECUTOR SCRIPTS
--- Универсальная таблица для хранения сервисов, алиасов, функций, глобальных переменных и шаблонов
 
 local variables = {
     -- Roblox Services
@@ -54,13 +52,9 @@ local variables = {
         CreatorType = game.CreatorType,
         MainEvent = game:GetService("ReplicatedStorage"):FindFirstChild("MainEvent"),
         GuiOffset = (pcall(function() return game:GetService("GuiService"):GetGuiInset().Y end) and game:GetService("GuiService"):GetGuiInset().Y) or 0,
-        Version = game.Version,
-        EngineVersion = settings().Diagnostics and settings().Diagnostics.Version or "unknown",
         IsStudio = game:GetService("RunService"):IsStudio(),
         IsTenFootInterface = game:GetService("GuiService").IsTenFootInterface,
         IsVR = pcall(function() return game:GetService("VRService").VRDeviceAvailable end) and game:GetService("VRService").VRDeviceAvailable or false,
-        Platform = UserSettings and UserSettings().GameSettings and UserSettings().GameSettings.Platform or "unknown",
-        DeviceType = UserSettings and UserSettings().GameSettings and UserSettings().GameSettings.ComputerName or "unknown",
         -- ...
     },
 
@@ -69,15 +63,10 @@ local variables = {
         ServerTime = os.time(),
         LocalTime = os.date("%c"),
         Uptime = tick(),
-        Ping = (game:GetService("Stats").Network and game:GetService("Stats").Network.ServerStatsItem["Data Ping"] and game:GetService("Stats").Network.ServerStatsItem["Data Ping"].Value) or 0,
         FPS = (pcall(function() return game:GetService("Stats").Workspace["Frame Rate"] end) and game:GetService("Stats").Workspace["Frame Rate"].Value) or 60,
         PlayerCount = #game:GetService("Players"):GetPlayers(),
         MaxPlayers = game:GetService("Players").MaxPlayers or 0,
-        PrivateServerId = game.PrivateServerId,
-        PrivateServerOwnerId = game.PrivateServerOwnerId,
-        LocaleId = game.LocaleId,
         JobId = game.JobId,
-        CreatorId = game.CreatorId,
         CreatorType = game.CreatorType,
         -- ...
     },
@@ -89,9 +78,6 @@ local variables = {
         Exploit = (syn and "Synapse") or (KRNL_LOADED and "KRNL") or (is_sirhurt_closure and "SirHurt") or (secure_load and "Sentinel") or "Unknown",
         HWID = (gethwid and gethwid()) or (syn and syn.request and syn.request({Url="http://httpbin.org/get"}).Headers["Syn-Fingerprint"]) or "unknown",
         Is64Bit = jit and jit.arch == "x64" or false,
-        IsWindows = (string.find(string.lower(os.getenv("OS") or ""), "windows") ~= nil),
-        IsMac = (string.find(string.lower(os.getenv("HOME") or ""), "/users/") ~= nil),
-        IsMobile = (UserInputService and UserInputService.TouchEnabled) or false,
         -- ...
     },
 
@@ -510,15 +496,12 @@ local variables = {
         EditQualityLevel = settings().Rendering.EditQualityLevel,
         MeshPartDetailLevel = settings().Rendering.MeshPartDetailLevel,
         FrameRateManager = settings().Rendering.FrameRateManager,
-        VSync = settings().Rendering.EnableVSync,
         -- ...
     },
 
     -- FPS/Performance
     performance = {
-        FPSCap = settings().Rendering and settings().Rendering.FramerateCap or 60,
-        GPU = settings().Diagnostics and settings().Diagnostics.GPU or "unknown",
-        CPU = settings().Diagnostics and settings().Diagnostics.CPU or "unknown",
+
         Memory = collectgarbage("count"),
         -- ...
     },
@@ -530,9 +513,6 @@ local variables = {
         JobId = game.JobId,
         CreatorId = game.CreatorId,
         CreatorType = game.CreatorType,
-        LocaleId = game.LocaleId,
-        PrivateServerId = game.PrivateServerId,
-        PrivateServerOwnerId = game.PrivateServerOwnerId,
         -- ...
     },
 
