@@ -44,8 +44,8 @@ end
 
 -- Create main window
 local window = ImGui:CreateWindow({
-    Title = "Cheat GUI",
-    Size = UDim2.new(0, 350, 0, 370),
+    Title = "Freedom.TAPBOT",
+    Size = UDim2.new(0, 900, 0, 600),
 })
 
 window:Center()
@@ -56,7 +56,7 @@ local tabRage = window:CreateTab({
 })
 
 local rageHeader = tabRage:CollapsingHeader({
-    Title = "Aimbot"
+    Title = "ragebot"
 })
 
 -- Create other tabs
@@ -92,7 +92,7 @@ end
 
 
 rageHeader:Checkbox({
-    Label = "Enable Silent Aim",
+    Label = "Enable",
     Value = silentAimVars.Options.Enabled,
     Callback = function(self, value)
         silentAimVars.Options.Enabled = value
@@ -100,7 +100,7 @@ rageHeader:Checkbox({
 })
 
 rageHeader:Checkbox({
-    Label = "Force Hit",
+    Label = "ForceHit",
     Value = silentAimVars.Silent.ForceHit.Enabled,
     Callback = function(self, value)
         silentAimVars.Silent.ForceHit.Enabled = value
@@ -109,7 +109,7 @@ rageHeader:Checkbox({
 })
 
 rageHeader:Checkbox({
-    Label = "Magic Bullets",
+    Label = "MagicBullets",
     Value = silentAimVars.Silent.MagicBullets.Enabled,
     Callback = function(self, value)
         silentAimVars.Silent.MagicBullets.Enabled = value
@@ -117,7 +117,7 @@ rageHeader:Checkbox({
 })
 
 rageHeader:InputText({
-    Label = "Prediction XZ",
+    Label = "PredXZ",
     Value = tostring(silentAimVars.Silent.PredictionXZ),
     PlaceHolder = "Enter Prediction XZ",
     Callback = function(self, value)
@@ -129,7 +129,7 @@ rageHeader:InputText({
 })
 
 rageHeader:InputText({
-    Label = "Prediction Y",
+    Label = "PredY",
     Value = tostring(silentAimVars.Silent.PredictionY),
     PlaceHolder = "Enter Prediction Y",
     Callback = function(self, value)
@@ -141,7 +141,7 @@ rageHeader:InputText({
 })
 
 rageHeader:Combo({
-    Label = "Resolver Type",
+    Label = "Resolver",
     Items = resolverTypes,
     Placeholder = silentAimVars.Misc.Checks.Resolver.Type or "None",
     Callback = function(self, value)
@@ -156,7 +156,7 @@ rageHeader:Combo({
 
 -- Target Mode Selection
 rageHeader:Combo({
-    Label = "Target Mode",
+    Label = "SelectTargetMode",
     Items = targetModes,
     Placeholder = silentAimVars.Misc.TargetMode,
     Callback = function(self, value)
@@ -169,7 +169,7 @@ rageHeader:Combo({
 
 -- Sticky Target Keybind
 rageHeader:Keybind({
-    Label = "Sticky Target Key",
+    Label = "StickyKey",
     Value = silentAimVars.Misc.StickyTarget.Key,
     Callback = function(self, value)
         silentAimVars.Misc.StickyTarget.Key = value
@@ -177,7 +177,7 @@ rageHeader:Keybind({
 })
 
 rageHeader:Slider({
-    Label = "KillAura Max Targets",
+    Label = "KillAuraTargets",
     Value = silentAimVars.Misc.KillAura.MaxTargets,
     MinValue = 1,
     MaxValue = 10,
@@ -188,12 +188,12 @@ rageHeader:Slider({
 
 -- Checks Header
 local checksHeader = rageHeader:CollapsingHeader({
-    Title = "Target Checks",
+    Title = "Checks",
     Open = false
 })
 
 checksHeader:Checkbox({
-    Label = "Wall Check",
+    Label = "Wall",
     Value = silentAimVars.Misc.Checks.WallCheck.Enabled,
     Callback = function(self, value)
         silentAimVars.Misc.Checks.WallCheck.Enabled = value
@@ -201,7 +201,7 @@ checksHeader:Checkbox({
 })
 
 checksHeader:Checkbox({
-    Label = "KO Check",
+    Label = "Knocked",
     Value = silentAimVars.Misc.Checks.KOCheck.Enabled,
     Callback = function(self, value)
         silentAimVars.Misc.Checks.KOCheck.Enabled = value
@@ -209,7 +209,7 @@ checksHeader:Checkbox({
 })
 
 checksHeader:Checkbox({
-    Label = "Sit Check",
+    Label = "Seat",
     Value = silentAimVars.Misc.Checks.SitCheck.Enabled,
     Callback = function(self, value)
         silentAimVars.Misc.Checks.SitCheck.Enabled = value
@@ -217,7 +217,7 @@ checksHeader:Checkbox({
 })
 
 checksHeader:Checkbox({
-    Label = "Grab Check",
+    Label = "Grabbed",
     Value = silentAimVars.Misc.Checks.GrabCheck.Enabled,
     Callback = function(self, value)
         silentAimVars.Misc.Checks.GrabCheck.Enabled = value
