@@ -1,0 +1,610 @@
+local SourceURL = 'https://github.com/depthso/Roblox-ImGUI/raw/main/ImGui.lua'
+ImGui = loadstring(game:HttpGet(SourceURL))()
+
+-- Initialize Silent Aim variables first
+local silentAimVars = variables and variables.SilentAim or getgenv().SilentAim
+if not silentAimVars then
+    silentAimVars = {
+        Options = { Enabled = false },
+        Silent = { 
+            PredictionXZ = 0.12362, 
+            PredictionY = 0.12362, 
+            Part = "HumanoidRootPart",
+            ForceHit = {
+                Enabled = false,
+                State = true
+            },
+            MagicBullets = {
+                Enabled = false
+            }
+        },
+        Misc = { 
+            Checks = { 
+                Resolver = { Enabled = false, Type = "Calculate CFrame" },
+                WallCheck = { Enabled = false },
+                KOCheck = { Enabled = false },
+                SitCheck = { Enabled = false },
+                GrabCheck = { Enabled = false }
+            },
+            TargetMode = "Nuker",
+            StickyTarget = {
+                Enabled = false,
+                Key = Enum.KeyCode.X,
+                Target = nil
+            },
+            KillAura = {
+                MaxTargets = 3,
+                Index = 1,
+                LastSwitch = 0
+            }
+        }
+    }
+    getgenv().SilentAim = silentAimVars
+end
+
+-- Create main window
+local window = ImGui:CreateWindow({
+    Title = "Cheat GUI",
+    Size = UDim2.new(0, 350, 0, 370),
+})
+
+window:Center()
+
+-- Create tabs
+local tabRage = window:CreateTab({
+    Name = "RAGE"
+})
+
+local rageHeader = tabRage:CollapsingHeader({
+    Title = "Aimbot"
+})
+
+-- Create other tabs
+local tabMisc = window:CreateTab({ Name = "MISC" })
+local tabVisual = window:CreateTab({ Name = "VISUAL" })
+local tabPlayer = window:CreateTab({ Name = "PLAYER" })
+local tabConfig = window:CreateTab({ Name = "CONFIG" })
+
+-- Silent Aim CollapsingHeader
+if silentAimVars and silentAimVars.Options then
+    silentAimVars.Options.Enabled = false
+    if silentAimVars.Misc and silentAimVars.Misc.Checks and silentAimVars.Misc.Checks.Resolver then
+        silentAimVars.Misc.Checks.Resolver.Enabled = false
+    end
+    if not silentAimVars.Misc.KillAura then
+        silentAimVars.Misc.KillAura = { MaxTargets = 3, Index = 1, LastSwitch = 0 }
+    end
+end
+
+local resolverTypes = { "None", "Calculate CFrame", "Move direction", "Velocity" }
+local targetModes = { "Nuker", "Sticky", "KillAura" }
+
+local aimPartsList = {"HumanoidRootPart", "Head", "UpperTorso", "LowerTorso", "LeftFoot", "RightFoot", "LeftHand", "RightHand"}
+
+if not silentAimVars.Silent.AirPart then
+    silentAimVars.Silent.AirPart = "Head"
+end
+if not silentAimVars.Silent.Part then
+    silentAimVars.Silent.Part = "HumanoidRootPart"
+end
+
+
+
+
+rageHeader:Checkbox({
+    Label = "Enable Silent Aim",
+    Value = silentAimVars.Options.Enabled,
+    Callback = function(self, value)
+        silentAimVars.Options.Enabled = value
+    end
+})
+
+rageHeader:Checkbox({
+    Label = "Force Hit",
+    Value = silentAimVars.Silent.ForceHit.Enabled,
+    Callback = function(self, value)
+        silentAimVars.Silent.ForceHit.Enabled = value
+        silentAimVars.Silent.ForceHit.State = true
+    end
+})
+
+rageHeader:Checkbox({
+    Label = "Magic Bullets",
+    Value = silentAimVars.Silent.MagicBullets.Enabled,
+    Callback = function(self, value)
+        silentAimVars.Silent.MagicBullets.Enabled = value
+    end
+})
+
+rageHeader:InputText({
+    Label = "Prediction XZ",
+    Value = tostring(silentAimVars.Silent.PredictionXZ),
+    PlaceHolder = "Enter Prediction XZ",
+    Callback = function(self, value)
+        local num = tonumber(value)
+        if num then
+            silentAimVars.Silent.PredictionXZ = num
+        end
+    end
+})
+
+rageHeader:InputText({
+    Label = "Prediction Y",
+    Value = tostring(silentAimVars.Silent.PredictionY),
+    PlaceHolder = "Enter Prediction Y",
+    Callback = function(self, value)
+        local num = tonumber(value)
+        if num then
+            silentAimVars.Silent.PredictionY = num
+        end
+    end
+})
+
+rageHeader:Combo({
+    Label = "Resolver Type",
+    Items = resolverTypes,
+    Placeholder = silentAimVars.Misc.Checks.Resolver.Type or "None",
+    Callback = function(self, value)
+        if value == "None" then
+            silentAimVars.Misc.Checks.Resolver.Enabled = false
+        else
+            silentAimVars.Misc.Checks.Resolver.Enabled = true
+            silentAimVars.Misc.Checks.Resolver.Type = value
+        end
+    end
+})
+
+-- Target Mode Selection
+rageHeader:Combo({
+    Label = "Target Mode",
+    Items = targetModes,
+    Placeholder = silentAimVars.Misc.TargetMode,
+    Callback = function(self, value)
+        silentAimVars.Misc.TargetMode = value
+        if value == "Nuker" then
+            silentAimVars.Misc.StickyTarget.Target = nil
+        end
+    end
+})
+
+-- Sticky Target Keybind
+rageHeader:Keybind({
+    Label = "Sticky Target Key",
+    Value = silentAimVars.Misc.StickyTarget.Key,
+    Callback = function(self, value)
+        silentAimVars.Misc.StickyTarget.Key = value
+    end
+})
+
+rageHeader:Slider({
+    Label = "KillAura Max Targets",
+    Value = silentAimVars.Misc.KillAura.MaxTargets,
+    MinValue = 1,
+    MaxValue = 10,
+    Callback = function(self, value)
+        silentAimVars.Misc.KillAura.MaxTargets = math.floor(value)
+    end
+})
+
+-- Checks Header
+local checksHeader = rageHeader:CollapsingHeader({
+    Title = "Target Checks",
+    Open = false
+})
+
+checksHeader:Checkbox({
+    Label = "Wall Check",
+    Value = silentAimVars.Misc.Checks.WallCheck.Enabled,
+    Callback = function(self, value)
+        silentAimVars.Misc.Checks.WallCheck.Enabled = value
+    end
+})
+
+checksHeader:Checkbox({
+    Label = "KO Check",
+    Value = silentAimVars.Misc.Checks.KOCheck.Enabled,
+    Callback = function(self, value)
+        silentAimVars.Misc.Checks.KOCheck.Enabled = value
+    end
+})
+
+checksHeader:Checkbox({
+    Label = "Sit Check",
+    Value = silentAimVars.Misc.Checks.SitCheck.Enabled,
+    Callback = function(self, value)
+        silentAimVars.Misc.Checks.SitCheck.Enabled = value
+    end
+})
+
+checksHeader:Checkbox({
+    Label = "Grab Check",
+    Value = silentAimVars.Misc.Checks.GrabCheck.Enabled,
+    Callback = function(self, value)
+        silentAimVars.Misc.Checks.GrabCheck.Enabled = value
+    end
+})
+
+-- ВНЕДРЕНИЕ САМОГО АИМБОТА (Silent Aim)
+local SilentAim = getgenv().SilentAim
+if getgenv().Loaded then return end
+
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local UserInputService = game:GetService("UserInputService")
+
+local LocalPlayer = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
+local FindFirstChild = game.FindFirstChild
+local FindPartOnRayWithIgnoreList = Workspace.FindPartOnRayWithIgnoreList
+local GetPlayers = Players.GetPlayers
+local GetMouseLocation = UserInputService.GetMouseLocation
+local WorldToViewportPoint = Camera.WorldToViewportPoint
+local NewVector2 = Vector2.new
+local NewCFrame = CFrame.new
+local NewRay = Ray.new
+local TableFind = table.find
+local IsA = game.IsA
+local Inf = math.huge
+
+local function IsPlayerAlive(player)
+    return player and player.Character and FindFirstChild(player.Character, "Humanoid") and player.Character.Humanoid.Health > 0
+end
+
+local function BehindWall(character)
+    local targetPosition = character.HumanoidRootPart.Position
+    local cameraPosition = Camera.CFrame.Position
+    local distance = (targetPosition - cameraPosition).Magnitude
+    local hitPart, hitPosition = FindPartOnRayWithIgnoreList(
+        Workspace,
+        NewRay(cameraPosition, (targetPosition - cameraPosition).Unit * distance),
+        { LocalPlayer.Character, character }
+    )
+    return hitPart == nil or (hitPosition - cameraPosition).Magnitude >= distance
+end
+
+local function isPlayerKO(player)
+    if not player.Character then
+        return false
+    end
+    local bodyEffects = player.Character:FindFirstChild("BodyEffects")
+    if bodyEffects then
+        local KO = bodyEffects:FindFirstChild("K.O")
+        if KO and KO:IsA("BoolValue") and KO.Value then
+            return true
+        end
+    end
+    local humanoidRootPart = player.Character:FindFirstChild("HumanoidRootPart")
+    if humanoidRootPart and humanoidRootPart.Anchored then
+        return true
+    end
+    return false
+end
+
+local function isPlayerSeated(player)
+    if not player.Character then
+        return false
+    end
+    local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+    if humanoid and humanoid.SeatPart then
+        return true
+    end
+    return false
+end
+
+local function isPlayerGrabbed(player)
+    if not player or not player.Character then return false end
+    return player.Character:FindFirstChild("GRABBING_CONSTRAINT") ~= nil
+end
+
+local function WallCheck(character)
+    if not SilentAim.Misc.Checks.WallCheck.Enabled then
+        return true
+    end
+    if not character then return false end
+    return not BehindWall(Players:GetPlayerFromCharacter(character))
+end
+
+local function PassesChecks(player)
+    if not player or not player.Character then return false end
+    
+    if not IsPlayerAlive(player) then return false end
+    
+    if SilentAim.Misc.Checks.KOCheck.Enabled and isPlayerKO(player) then return false end
+    if SilentAim.Misc.Checks.SitCheck.Enabled and isPlayerSeated(player) then return false end
+    if SilentAim.Misc.Checks.GrabCheck.Enabled and isPlayerGrabbed(player) then return false end
+    
+    return true
+end
+
+-- Resolver Variables
+local lastPosition = nil
+local lastUpdateTime = nil
+local predictedPosition = nil
+
+local function getPredictedPosition(targetPlayer)
+    if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("Humanoid") then
+        local aimPartPos = targetPlayer.Character[silentAimVars.Silent.Part].Position
+
+        if not lastPosition or not lastUpdateTime then
+            lastPosition = aimPartPos
+            lastUpdateTime = tick()
+            predictedPosition = aimPartPos
+            return predictedPosition
+        end
+
+        local currentTime = tick()
+        local deltaTime = currentTime - lastUpdateTime
+
+        local predictionResolver = silentAimVars.Misc.Checks.Resolver.Type
+        if predictionResolver == "Velocity" then
+            local velocity = targetPlayer.Character[silentAimVars.Silent.Part].Velocity
+            predictedPosition = aimPartPos + Vector3.new(
+                velocity.X * silentAimVars.Silent.PredictionXZ,
+                velocity.Y * silentAimVars.Silent.PredictionY,
+                velocity.Z * silentAimVars.Silent.PredictionXZ
+            )
+        elseif predictionResolver == "Move direction" then
+            predictedPosition = aimPartPos + (targetPlayer.Character.Humanoid.MoveDirection * (silentAimVars.Silent.PredictionXZ * 10))
+        elseif predictionResolver == "Calculate CFrame" then
+            if (aimPartPos - lastPosition).Magnitude < 0.001 then
+                predictedPosition = aimPartPos
+            else
+                local distance = (aimPartPos - lastPosition).Magnitude
+                local predictedDistance = (distance / deltaTime) * (0.1 * (silentAimVars.Silent.PredictionXZ * 10))
+                predictedPosition = aimPartPos + (aimPartPos - lastPosition).Unit * predictedDistance
+
+                local yChange = (aimPartPos.Y - lastPosition.Y) / deltaTime * (0.1 * silentAimVars.Silent.PredictionY)
+                predictedPosition = predictedPosition + Vector3.new(0, yChange, 0)
+            end
+        end
+
+        lastUpdateTime = currentTime
+        lastPosition = aimPartPos
+        return predictedPosition
+    end
+    return nil
+end
+
+local function GetTargetAimPart(player)
+    if not player or not player.Character then return silentAimVars.Silent.Part end
+    local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        local state = humanoid:GetState()
+        if state == Enum.HumanoidStateType.Jumping or state == Enum.HumanoidStateType.Freefall then
+            return silentAimVars.Silent.AirPart or silentAimVars.Silent.Part
+        end
+    end
+    return silentAimVars.Silent.Part
+end
+
+local function GetClosestPlayerToCursor()
+    if not SilentAim or not SilentAim.Silent then return nil end
+    
+    local shortestDistance = math.huge
+    local closestPlayer = nil
+    local mousePosition = GetMouseLocation(UserInputService)
+    for _, player in next, GetPlayers(Players) do
+        if player and player.Character then
+            if player ~= LocalPlayer and PassesChecks(player) and WallCheck(player.Character) then
+                local partName = GetTargetAimPart(player)
+                local targetPart = player.Character:FindFirstChild(partName)
+                if targetPart then
+                    local onScreenPosition, isOnScreen = WorldToViewportPoint(Camera, targetPart.Position)
+                    if isOnScreen then
+                        local distance = (NewVector2(onScreenPosition.X, onScreenPosition.Y) - mousePosition).Magnitude
+                        if distance < shortestDistance then
+                            closestPlayer = player
+                            shortestDistance = distance
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return closestPlayer
+end
+
+local function GetKillAuraTargets()
+    local targets = {}
+    local part = SilentAim.Silent.Part
+    for _, player in next, GetPlayers(Players) do
+        if player and player.Character and player ~= LocalPlayer and PassesChecks(player) and WallCheck(player.Character) then
+            local targetPart = player.Character:FindFirstChild(part)
+            if targetPart then
+                local onScreenPosition, isOnScreen = WorldToViewportPoint(Camera, targetPart.Position)
+                if isOnScreen then
+                    table.insert(targets, player)
+                end
+            end
+        end
+    end
+    return targets
+end
+
+-- Handle sticky target key press
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if not gameProcessed and SilentAim and SilentAim.Misc and SilentAim.Misc.StickyTarget and input.KeyCode == SilentAim.Misc.StickyTarget.Key then
+        if SilentAim.Misc.TargetMode == "Sticky" then
+            if SilentAim.Misc.StickyTarget.Target then
+                SilentAim.Misc.StickyTarget.Target = nil
+            else
+                SilentAim.Misc.StickyTarget.Target = GetClosestPlayerToCursor()
+            end
+        end
+    end
+end)
+
+local function GetTargetPlayer()
+    if not SilentAim or not SilentAim.Options or not SilentAim.Options.Enabled then return nil end
+    if SilentAim.Misc.TargetMode == "Sticky" then
+        local stickyTarget = SilentAim.Misc.StickyTarget.Target
+        if stickyTarget and stickyTarget.Character and IsPlayerAlive(stickyTarget) and PassesChecks(stickyTarget) and WallCheck(stickyTarget.Character) then
+            return stickyTarget
+        end
+        SilentAim.Misc.StickyTarget.Target = nil
+        return nil
+    elseif SilentAim.Misc.TargetMode == "KillAura" then
+        local now = tick()
+        local killaura = SilentAim.Misc.KillAura
+        local targets = GetKillAuraTargets()
+        if #targets == 0 then return nil end
+        if killaura.Index > #targets then killaura.Index = 1 end
+        if now - (killaura.LastSwitch or 0) > 0.01 then -- 20 раз в секунду
+            killaura.Index = killaura.Index + 1
+            if killaura.Index > math.min(#targets, killaura.MaxTargets) then
+                killaura.Index = 1
+            end
+            killaura.LastSwitch = now
+        end
+        return targets[killaura.Index]
+    else -- Nuker
+        return GetClosestPlayerToCursor()
+    end
+end
+
+-- Initialize mouse variable
+local Mouse = LocalPlayer:GetMouse()
+
+local MetaTable = getrawmetatable(game)
+local OldIndex = MetaTable.__index
+setreadonly(MetaTable, false)
+
+-- Update MetaTable.__index to use GetTargetPlayer instead of GetClosestPlayerToCursor
+MetaTable.__index = function(self, key)
+    if not checkcaller() and self == Mouse and silentAimVars.Options.Enabled then
+        if key == "Hit" or key == "Target" then
+            local targetPlayer = GetTargetPlayer()
+            if targetPlayer and targetPlayer.Character then
+                local partName = GetTargetAimPart(targetPlayer)
+                local targetPart = targetPlayer.Character:FindFirstChild(partName)
+                if targetPart then
+                    local finalPosition
+                    if silentAimVars.Misc.Checks.Resolver.Enabled then
+                        finalPosition = getPredictedPosition(targetPlayer)
+                    else
+                        local velocity = targetPart.Velocity or Vector3.new(0, 0, 0)
+                        finalPosition = targetPart.Position + (velocity * silentAimVars.Silent.PredictionXZ)
+                    end
+
+                    if finalPosition then
+                        local humanoid = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
+                        if humanoid then
+                            if humanoid:GetState() == Enum.HumanoidStateType.Jumping then
+                                finalPosition = finalPosition + Vector3.new(0, (silentAimVars.Silent.Offsets and silentAimVars.Silent.Offsets.Jump and silentAimVars.Silent.Offsets.Jump.Amount) or 0, 0)
+                            elseif humanoid:GetState() == Enum.HumanoidStateType.Freefall then
+                                finalPosition = finalPosition + Vector3.new(0, (silentAimVars.Silent.Offsets and silentAimVars.Silent.Offsets.Fall and silentAimVars.Silent.Offsets.Fall.Amount) or 0, 0)
+                            end
+                        end
+                        return key == "Hit" and NewCFrame(finalPosition) or targetPart
+                    end
+                end
+            end
+        end
+    end
+    return OldIndex(self, key)
+end
+setreadonly(MetaTable, true)
+
+local function FixTool(character)
+    if character then
+        for _, v in next, character:GetChildren() do
+            if IsA(v, "Tool") then
+                local currentTool = v
+                currentTool.Parent = LocalPlayer:FindFirstChildOfClass("Backpack")
+                break
+            end
+        end
+    end
+end
+
+FixTool(LocalPlayer.Character)
+
+LocalPlayer.CharacterAdded:Connect(function(character)
+    FixTool(character)
+end)
+
+-- ForceHit target storage
+local forceHitTarget = {
+    enabled = false,
+    position = Vector3.new(0, 0, 0),
+    part = nil
+}
+
+-- ForceHit functionality
+local function updateForceHitTarget()
+    if not silentAimVars.Silent.ForceHit.Enabled then
+        forceHitTarget.enabled = false
+        return
+    end
+    
+    local targetPlayer = GetTargetPlayer()
+    if targetPlayer and targetPlayer.Character then
+        local partName = GetTargetAimPart(targetPlayer)
+        local targetPart = targetPlayer.Character:FindFirstChild(partName)
+        
+        if targetPart then
+            forceHitTarget.enabled = true
+            forceHitTarget.position = targetPart.Position
+            forceHitTarget.part = targetPart
+        end
+    end
+end
+
+game:GetService("RunService").Heartbeat:Connect(updateForceHitTarget)
+
+-- Magic Bullets functionality
+local lastMagicBulletTime = 0
+local function updateMagicBullets()
+    if not silentAimVars.Silent.MagicBullets.Enabled then return end
+    
+    local currentTime = tick()
+    if currentTime - lastMagicBulletTime < 0.05 then return end -- 20 shots per second max
+    
+    local targetPlayer = GetTargetPlayer()
+    if not targetPlayer or not targetPlayer.Character then return end
+    
+    local tool = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Tool")
+    if not tool then return end
+    
+    local handle = tool:FindFirstChild("Handle")
+    if not handle then return end
+    
+    local targetPart = targetPlayer.Character:FindFirstChild(silentAimVars.Silent.Part)
+    local targetHead = targetPlayer.Character:FindFirstChild("Head")
+    
+    if targetPart and targetHead then
+        game:GetService("ReplicatedStorage").MainEvent:FireServer(
+            "ShootGun",
+            handle,
+            handle.CFrame.Position,
+            targetPart.Position,
+            targetHead,
+            Vector3.new(0, 0, -1)
+        )
+        lastMagicBulletTime = currentTime
+    end
+end
+
+game:GetService("RunService").Heartbeat:Connect(updateMagicBullets)
+
+-- Hooks storage to prevent recursion
+local Hooks = {}
+
+-- Update hook for ForceHit
+Hooks.Remote = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
+    local args = { ... }
+    local method = getnamecallmethod():lower()
+
+    if forceHitTarget.enabled and forceHitTarget.position and forceHitTarget.part and 
+       method == "fireserver" and self.Name == "MainEvent" and args[1] == "ShootGun" then
+        args[4] = forceHitTarget.position
+        args[5] = forceHitTarget.part
+        args[6] = Vector3.new(0, 0, 0)
+        return Hooks.Remote(self, unpack(args))
+    end
+
+    return Hooks.Remote(self, ...)
+end))
+
+getgenv().Loaded = true
+
