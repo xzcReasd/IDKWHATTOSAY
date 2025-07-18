@@ -158,8 +158,9 @@ local hitchamsHeader = visualHeader:CollapsingHeader({
     Title = "hitchams"
 })
 
+-- HitChams section (labels на английском)
 hitchamsHeader:Checkbox({
-    Label = "Включить HitChams",
+    Label = "Enable HitChams",
     Value = getgenv().HitChamsConfig.Enabled,
     Callback = function(self, value)
         getgenv().HitChamsConfig.Enabled = value
@@ -167,7 +168,7 @@ hitchamsHeader:Checkbox({
 })
 
 hitchamsHeader:Slider({
-    Label = "Прозрачность",
+    Label = "Transparency",
     Value = getgenv().HitChamsConfig.Transparency,
     MinValue = 0,
     MaxValue = 1,
@@ -181,7 +182,7 @@ hitchamsHeader:Slider({
 })
 
 hitchamsHeader:Slider({
-    Label = "Длительность",
+    Label = "Duration",
     Value = getgenv().HitChamsConfig.Duration,
     MinValue = 0.1,
     MaxValue = 5,
@@ -195,7 +196,7 @@ hitchamsHeader:Slider({
 })
 
 hitchamsHeader:Combo({
-    Label = "Материал",
+    Label = "Material",
     Items = {"ForceField", "Neon", "Plastic", "SmoothPlastic", "Glass"},
     Placeholder = tostring(getgenv().HitChamsConfig.Material.Name),
     Callback = function(self, value)
@@ -203,16 +204,56 @@ hitchamsHeader:Combo({
     end
 })
 
-hitchamsHeader:InputText({
-    Label = "Цвет (R,G,B)",
-    Value = string.format("%d,%d,%d", getgenv().HitChamsConfig.Color.R*255, getgenv().HitChamsConfig.Color.G*255, getgenv().HitChamsConfig.Color.B*255),
-    PlaceHolder = "255,0,0",
-    Callback = function(self, value)
-        local r,g,b = value:match("(%d+),(%d+),(%d+)")
-        r,g,b = tonumber(r), tonumber(g), tonumber(b)
-        if r and g and b then
-            getgenv().HitChamsConfig.Color = Color3.fromRGB(r,g,b)
-        end
+-- Новый CollapsingHeader для выбора цвета через слайдеры
+local colorHeader = hitchamsHeader:CollapsingHeader({
+    Title = "Color"
+})
+
+-- Получаем текущие значения R, G, B
+local function getRGB()
+    local color = getgenv().HitChamsConfig.Color
+    return math.floor(color.R * 255), math.floor(color.G * 255), math.floor(color.B * 255)
+end
+
+local r, g, b = getRGB()
+
+colorHeader:Slider({
+    Label = "R",
+    Value = r,
+    MinValue = 1,
+    MaxValue = 255,
+    Step = 1,
+    Callback = function(self)
+        local value = self:GetValue()
+        local _, g, b = getRGB()
+        getgenv().HitChamsConfig.Color = Color3.fromRGB(value, g, b)
+        return true
+    end
+})
+colorHeader:Slider({
+    Label = "G",
+    Value = g,
+    MinValue = 1,
+    MaxValue = 255,
+    Step = 1,
+    Callback = function(self)
+        local r, _, b = getRGB()
+        local value = self:GetValue()
+        getgenv().HitChamsConfig.Color = Color3.fromRGB(r, value, b)
+        return true
+    end
+})
+colorHeader:Slider({
+    Label = "B",
+    Value = b,
+    MinValue = 1,
+    MaxValue = 255,
+    Step = 1,
+    Callback = function(self)
+        local r, g, _ = getRGB()
+        local value = self:GetValue()
+        getgenv().HitChamsConfig.Color = Color3.fromRGB(r, g, value)
+        return true
     end
 })
 
