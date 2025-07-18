@@ -528,6 +528,148 @@ checksHeader:Checkbox({
     end
 })
 
+-- ORBIT CONFIG
+getgenv().anarchy = getgenv().anarchy or {}
+getgenv().anarchy['orbit'] = getgenv().anarchy['orbit'] or {
+    Enabled = false,
+    Keybind = Enum.KeyCode.Q,
+    Speed = 15,
+    Height = 0,
+    Radius = 15
+}
+local orbitConfig = getgenv().anarchy['orbit']
+
+local orbitHeader = rageHeader:CollapsingHeader({
+    Title = "Orbit"
+})
+
+orbitHeader:Checkbox({
+    Label = "Enable Orbit",
+    Value = orbitConfig.Enabled,
+    Callback = function(self, value)
+        orbitConfig.Enabled = value
+        if not value then
+            TargTp = false
+            TargPlr = nil
+        end
+    end
+})
+
+orbitHeader:Keybind({
+    Label = "Keybind",
+    Value = orbitConfig.Keybind,
+    Callback = function(self, value)
+        orbitConfig.Keybind = value
+    end
+})
+orbitHeader:Slider({
+    Label = "Speed",
+    Value = orbitConfig.Speed,
+    MinValue = 1,
+    MaxValue = 100,
+    Step = 1,
+    Callback = function(self)
+        orbitConfig.Speed = self:GetValue()
+        return true
+    end
+})
+orbitHeader:Slider({
+    Label = "Height",
+    Value = orbitConfig.Height,
+    MinValue = -50,
+    MaxValue = 50,
+    Step = 1,
+    Callback = function(self)
+        orbitConfig.Height = self:GetValue()
+        return true
+    end
+})
+orbitHeader:Slider({
+    Label = "Radius",
+    Value = orbitConfig.Radius,
+    MinValue = 1,
+    MaxValue = 100,
+    Step = 1,
+    Callback = function(self)
+        orbitConfig.Radius = self:GetValue()
+        return true
+    end
+})
+
+-- ORBIT LOGIC
+local LocalPlr = game.Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local Camera = workspace.CurrentCamera
+local UserInputService = game:GetService("UserInputService")
+TargPlr = nil
+TargTp = false
+
+local function GetClosestPlayer2()
+    local Distance, Player = math.huge, nil
+    for _, v in pairs(Players:GetPlayers()) do
+        if v ~= LocalPlr and v ~= nil then
+            local Character = v.Character
+            local RootPart = Character and Character:FindFirstChild('HumanoidRootPart')
+            if RootPart then
+                local Position, OnScreen = Camera:WorldToViewportPoint(RootPart.Position)
+                local Magnitude = (Vector2.new(Position.X, Position.Y) - UserInputService:GetMouseLocation()).Magnitude
+                if Magnitude <= Distance and OnScreen then
+                    Distance = Magnitude
+                    Player = v
+                end
+            end
+        end
+    end
+    return Player
+end
+
+local function updateNetworkedPosition()
+    if not orbitConfig.Enabled then return end
+    if TargTp and TargPlr then
+        local Targ = TargPlr
+        if Targ and Targ.Character and Targ.Character:FindFirstChild("HumanoidRootPart") then
+            local RootPart = LocalPlr.Character and LocalPlr.Character:FindFirstChild("HumanoidRootPart")
+            if not RootPart then return end
+            local realPosition = RootPart.Position
+            local realVelocity = RootPart.AssemblyLinearVelocity
+            local time = tick() * orbitConfig.Speed
+            local radius = orbitConfig.Radius
+            local height = orbitConfig.Height
+            local offsetX = math.cos(time) * radius
+            local offsetZ = math.sin(time) * radius
+            local offsetY = 0
+            local targetCFrame = Targ.Character.HumanoidRootPart.CFrame
+            local center = targetCFrame.Position + Vector3.new(0, height, 0)
+            RootPart.CFrame = CFrame.new(center + Vector3.new(offsetX, offsetY, offsetZ), center)
+            RootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+            task.wait()
+            RootPart.CFrame = CFrame.new(realPosition)
+            RootPart.AssemblyLinearVelocity = realVelocity
+        end
+    end
+end
+
+UserInputService.InputBegan:Connect(function(input)
+    if not orbitConfig.Enabled then return end
+    if input.KeyCode == orbitConfig.Keybind then
+        if TargPlr then
+            TargTp = not TargTp
+            if not TargTp then
+                TargPlr = nil
+            end
+        else
+            local closestPlayer = GetClosestPlayer2()
+            if closestPlayer then
+                TargPlr = closestPlayer
+                TargTp = true
+            end
+        end
+    end
+end)
+
+RunService.Heartbeat:Connect(updateNetworkedPosition)
+
 -- ВНЕДРЕНИЕ САМОГО АИМБОТА (Silent Aim)
 local SilentAim = getgenv().SilentAim
 if getgenv().Loaded then return end
@@ -1159,5 +1301,130 @@ RND:Connect(function()
     end
 end)
 
+local savePosConfig = getgenv().SavePosConfig or {
+    Enabled = false,
+    OffsetX = 0,
+    OffsetY = 5,
+    OffsetZ = 0
+}
+getgenv().SavePosConfig = savePosConfig
+
+local savePosHeader = rageHeader:CollapsingHeader({
+    Title = "SavePos"
+})
+
+savePosHeader:Checkbox({
+    Label = "Enable SavePos",
+    Value = savePosConfig.Enabled,
+    Callback = function(self, value)
+        savePosConfig.Enabled = value
+    end
+})
+savePosHeader:Slider({
+    Label = "Offset X",
+    Value = savePosConfig.OffsetX,
+    MinValue = -50,
+    MaxValue = 50,
+    Step = 0.1,
+    Callback = function(self)
+        savePosConfig.OffsetX = self:GetValue()
+        return true
+    end
+})
+savePosHeader:Slider({
+    Label = "Offset Y",
+    Value = savePosConfig.OffsetY,
+    MinValue = -100,
+    MaxValue = 100,
+    Step = 0.1,
+    Callback = function(self)
+        savePosConfig.OffsetY = self:GetValue()
+        return true
+    end
+})
+savePosHeader:Slider({
+    Label = "Offset Z",
+    Value = savePosConfig.OffsetZ,
+    MinValue = -50,
+    MaxValue = 50,
+    Step = 0.1,
+    Callback = function(self)
+        savePosConfig.OffsetZ = self:GetValue()
+        return true
+    end
+})
+
+-- Реализация SavePos (без плавности, сброс Velocity при отключении)
+local lastTargetForSavePos = nil
+local lastSavePosActive = false
+local lastHadTarget = false
+RunService.Heartbeat:Connect(function(dt)
+    local myChar = LocalPlayer.Character
+    local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
+    local savePosActive = savePosConfig.Enabled
+    local target = GetTargetPlayer and GetTargetPlayer() or nil
+    local hasTarget = target and target.Character and target.Character:FindFirstChild(GetTargetAimPart(target))
+
+    -- Сброс Velocity только при выключении SavePos (1 раз)
+    if lastSavePosActive and not savePosActive then
+        if myRoot then
+            myRoot.Velocity = Vector3.new(0,0,0)
+        end
+    end
+    -- Сброс Velocity только при потере цели (1 раз)
+    if savePosActive and lastHadTarget and not hasTarget then
+        if myRoot then
+            myRoot.Velocity = Vector3.new(0,0,0)
+        end
+    end
+    lastSavePosActive = savePosActive
+    lastHadTarget = hasTarget and true or false
+
+    if not savePosActive or not hasTarget then
+        return
+    end
+    local targetPart = target.Character:FindFirstChild(GetTargetAimPart(target))
+    local targetCFrame = targetPart.CFrame
+    local offset = Vector3.new(savePosConfig.OffsetX, savePosConfig.OffsetY, savePosConfig.OffsetZ)
+    local desiredPos = (targetCFrame * CFrame.new(offset)).p
+    myRoot.CFrame = CFrame.new(desiredPos, targetPart.Position + targetPart.CFrame.LookVector*5)
+end)
+
 getgenv().Loaded = true
+
+-- VIEW TARGET TOGGLE
+getgenv().ViewAimbotTarget = getgenv().ViewAimbotTarget or false
+rageHeader:Checkbox({
+    Label = "View target",
+    Value = getgenv().ViewAimbotTarget,
+    Callback = function(self, value)
+        getgenv().ViewAimbotTarget = value
+    end
+})
+
+local function setCameraToAimbotTarget(target)
+    local camera = game:GetService("Workspace").CurrentCamera
+    if target and target.Character then
+        local humanoid = target.Character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            camera.CameraSubject = humanoid
+            return
+        end
+    end
+    -- Если цели нет, вернуть камеру на игрока
+    local lp = game:GetService("Players").LocalPlayer
+    if lp.Character then
+        local playerHumanoid = lp.Character:FindFirstChildOfClass("Humanoid")
+        if playerHumanoid then
+            camera.CameraSubject = playerHumanoid
+        end
+    end
+end
+
+RunService.Heartbeat:Connect(function()
+    if getgenv().ViewAimbotTarget then
+        local target = GetTargetPlayer and GetTargetPlayer() or nil
+        setCameraToAimbotTarget(target)
+    end
+end)
 
