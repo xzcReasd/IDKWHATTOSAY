@@ -150,11 +150,210 @@ if not getgenv().TracerToTargetConfig then
     }
 end
 
+-- Speedhack Configuration
+if not getgenv().SpeedhackConfig then
+    getgenv().SpeedhackConfig = {
+        Enabled = false,
+        Active = false,
+        Speed = 50,
+        Keybind = Enum.KeyCode.X
+    }
+end
+
+-- FlyHack Configuration
+if not getgenv().FlyConfig then
+    getgenv().FlyConfig = {
+        Enabled = false,
+        Active = false,
+        Speed = 1,
+        Keybind = Enum.KeyCode.F
+    }
+end
+
 -- Define available indicator images
 local indicatorImages = {
     ["skull"] = "108770683919433",
     ["trollface"] = "130642148173502"
 }
+
+-- Speedhack Logic
+local S = {
+    PS = game:GetService('Players'),
+    RS = game:GetService('RunService'),
+    UIS = game:GetService('UserInputService'),
+}
+local HRT = S.RS.Heartbeat
+local LP = S.PS.LocalPlayer
+local M = math
+
+local speedHackConnection
+
+local function updateSpeedHack(character)
+    if not character then return end
+    local rootPart = character:WaitForChild('HumanoidRootPart')
+    local humanoid = character:WaitForChild('Humanoid')
+    if speedHackConnection then speedHackConnection:Disconnect() end
+    speedHackConnection = HRT:Connect(function(dt)
+        if getgenv().SpeedhackConfig.Enabled and getgenv().SpeedhackConfig.Active then
+            local move = humanoid.MoveDirection
+            if move.Magnitude > 0 then
+                rootPart.CFrame = rootPart.CFrame + (move.Unit * getgenv().SpeedhackConfig.Speed * dt)
+            end
+        end
+    end)
+end
+
+-- Speedhack functions
+getgenv().EnableSpeedhack = function()
+    getgenv().SpeedhackConfig.Enabled = true
+    updateSpeedHack(LP.Character)
+end
+
+getgenv().DisableSpeedhack = function()
+    getgenv().SpeedhackConfig.Enabled = false
+    getgenv().SpeedhackConfig.Active = false
+    if speedHackConnection then speedHackConnection:Disconnect() speedHackConnection = nil end
+end
+
+getgenv().ToggleSpeedhackKey = function()
+    if not getgenv().SpeedhackConfig.Enabled then return end
+    getgenv().SpeedhackConfig.Active = not getgenv().SpeedhackConfig.Active
+end
+
+getgenv().SetSpeedhackSpeed = function(val)
+    local num = tonumber(val)
+    if num then
+        num = math.clamp(num, 1, 2000000)
+        getgenv().SpeedhackConfig.Speed = num
+    end
+end
+
+-- Character respawn handler for speedhack
+LP.CharacterAdded:Connect(function(char)
+    if getgenv().SpeedhackConfig.Enabled then
+        updateSpeedHack(char)
+    end
+end)
+
+-- FlyHack Logic
+local SND = S.RS.Stepped
+local Cam = workspace.CurrentCamera
+local FlyLoop = nil
+
+local function setNoClip(character, state)
+    if not character then return end
+    for _, part in ipairs(character:GetDescendants()) do
+        if part:IsA('BasePart') then
+            if state then
+                if not part:GetAttribute('OriginalCollision') then
+                    part:SetAttribute('OriginalCollision', part.CanCollide)
+                    part:SetAttribute('OriginalTouch', part.CanTouch)
+                    if part:GetAttribute('CanQuery') ~= nil then
+                        part:SetAttribute('OriginalQuery', part.CanQuery)
+                    end
+                end
+                part.CanCollide = false
+                part.CanTouch = false
+                part.CanQuery = false
+            else
+                if part:GetAttribute('OriginalCollision') ~= nil then
+                    part.CanCollide = part:GetAttribute('OriginalCollision')
+                    part.CanTouch = part:GetAttribute('OriginalTouch')
+                    if part:GetAttribute('OriginalQuery') ~= nil then
+                        part.CanQuery = part:GetAttribute('OriginalQuery')
+                    end
+                    part:SetAttribute('OriginalCollision', nil)
+                    part:SetAttribute('OriginalTouch', nil)
+                    part:SetAttribute('OriginalQuery', nil)
+                end
+            end
+        end
+    end
+end
+
+local function updateFly(character)
+    if FlyLoop then FlyLoop:Disconnect() FlyLoop = nil end
+    if not character then return end
+    if not (getgenv().FlyConfig.Enabled and getgenv().FlyConfig.Active) then return end
+    setNoClip(character, true)
+    FlyLoop = SND:Connect(function()
+        local char = LP.Character
+        if not char then return end
+        setNoClip(char, true)
+        local hrp = char:FindFirstChild('HumanoidRootPart')
+        local hum = char:FindFirstChild('Humanoid')
+        if not hrp or not hum then return end
+        local speed = getgenv().FlyConfig.Speed * 50
+        local velocity = Vector3.new(0, 0, 0)
+        if S.UIS:IsKeyDown(Enum.KeyCode.Space) then velocity = velocity + Vector3.new(0, speed, 0) end
+        if S.UIS:IsKeyDown(Enum.KeyCode.LeftControl) then velocity = velocity + Vector3.new(0, -speed, 0) end
+        if S.UIS:IsKeyDown(Enum.KeyCode.W) then velocity = velocity + (Cam.CFrame.LookVector * speed) end
+        if S.UIS:IsKeyDown(Enum.KeyCode.A) then velocity = velocity + (Cam.CFrame.RightVector * -speed) end
+        if S.UIS:IsKeyDown(Enum.KeyCode.S) then velocity = velocity + (Cam.CFrame.LookVector * -speed) end
+        if S.UIS:IsKeyDown(Enum.KeyCode.D) then velocity = velocity + (Cam.CFrame.RightVector * speed) end
+        hrp.Velocity = velocity
+        hum:ChangeState('Freefall')
+    end)
+end
+
+local function stopFly()
+    if FlyLoop then FlyLoop:Disconnect() FlyLoop = nil end
+    local char = LP.Character
+    setNoClip(char, false)
+    if char then
+        local hrp = char:FindFirstChild('HumanoidRootPart')
+        local hum = char:FindFirstChild('Humanoid')
+        if hrp then
+            hrp.Velocity = Vector3.new(0, -2, 0)
+            local tempConn
+            tempConn = SND:Connect(function()
+                if not hrp or not hrp.Parent then tempConn:Disconnect() return end
+                hrp.Velocity = Vector3.new(0, hrp.Velocity.Y, 0)
+                tempConn:Disconnect()
+            end)
+        end
+        if hum then hum:ChangeState('Landing') end
+    end
+end
+
+-- FlyHack functions
+getgenv().EnableFly = function()
+    getgenv().FlyConfig.Enabled = true
+    if getgenv().FlyConfig.Active then
+        updateFly(LP.Character)
+    end
+end
+
+getgenv().DisableFly = function()
+    getgenv().FlyConfig.Enabled = false
+    getgenv().FlyConfig.Active = false
+    stopFly()
+end
+
+getgenv().ToggleFlyKey = function()
+    if not getgenv().FlyConfig.Enabled then return end
+    getgenv().FlyConfig.Active = not getgenv().FlyConfig.Active
+    if getgenv().FlyConfig.Active then
+        updateFly(LP.Character)
+    else
+        stopFly()
+    end
+end
+
+getgenv().SetFlySpeed = function(val)
+    local num = tonumber(val)
+    if num then
+        num = math.clamp(num, 0.1, 100)
+        getgenv().FlyConfig.Speed = num
+    end
+end
+
+-- Character respawn handler for flyhack
+LP.CharacterAdded:Connect(function(char)
+    if getgenv().FlyConfig.Enabled and getgenv().FlyConfig.Active then
+        updateFly(char)
+    end
+end)
 
 -- Create main window
 local window = ImGui:CreateWindow({
@@ -167,6 +366,86 @@ window:Center()
 -- Create tabs
 local tabRage = window:CreateTab({
     Name = "RAGE"
+})
+
+local tabMisc = window:CreateTab({
+    Name = "MISC"
+})
+
+-- Add speedhack section to MISC tab
+local speedhackHeader = tabMisc:CollapsingHeader({
+    Title = "speedhack"
+})
+
+-- Speedhack toggle
+speedhackHeader:Checkbox({
+    Label = "Enable",
+    Value = getgenv().SpeedhackConfig.Enabled,
+    Callback = function(self, value)
+        getgenv().SpeedhackConfig.Enabled = value
+        if value then
+            getgenv().EnableSpeedhack()
+        else
+            getgenv().DisableSpeedhack()
+        end
+    end
+})
+
+-- Speedhack keybind
+speedhackHeader:Keybind({
+    Label = "Keybind",
+    Value = getgenv().SpeedhackConfig.Keybind,
+    Callback = function(self, value)
+        getgenv().SpeedhackConfig.Keybind = value
+    end
+})
+
+-- Speedhack speed input
+speedhackHeader:InputText({
+    Label = "Speed",
+    Value = tostring(getgenv().SpeedhackConfig.Speed),
+    PlaceHolder = "Enter speed value",
+    Callback = function(self, value)
+        getgenv().SetSpeedhackSpeed(value)
+    end
+})
+
+-- Add FlyHack section to MISC tab
+local flyhackHeader = tabMisc:CollapsingHeader({
+    Title = "FlyHack"
+})
+
+-- FlyHack toggle
+flyhackHeader:Checkbox({
+    Label = "Enable",
+    Value = getgenv().FlyConfig.Enabled,
+    Callback = function(self, value)
+        getgenv().FlyConfig.Enabled = value
+        if value then
+            getgenv().EnableFly()
+        else
+            getgenv().DisableFly()
+        end
+    end
+})
+
+-- FlyHack keybind
+flyhackHeader:Keybind({
+    Label = "Keybind",
+    Value = getgenv().FlyConfig.Keybind,
+    Callback = function(self, value)
+        getgenv().FlyConfig.Keybind = value
+    end
+})
+
+-- FlyHack speed input
+flyhackHeader:InputText({
+    Label = "Speed",
+    Value = tostring(getgenv().FlyConfig.Speed),
+    PlaceHolder = "Enter speed multiplier (0.1-100)",
+    Callback = function(self, value)
+        getgenv().SetFlySpeed(value)
+    end
 })
 
 local rageHeader = tabRage:CollapsingHeader({
@@ -1929,6 +2208,18 @@ RunService.Heartbeat:Connect(function()
         end
     else
         tracerLine.Visible = false
+    end
+end)
+
+-- Speedhack keybind handler
+S.UIS.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == getgenv().SpeedhackConfig.Keybind then
+        getgenv().ToggleSpeedhackKey()
+    end
+    -- FlyHack keybind handler
+    if input.KeyCode == getgenv().FlyConfig.Keybind then
+        getgenv().ToggleFlyKey()
     end
 end)
 
