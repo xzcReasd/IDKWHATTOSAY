@@ -1,5 +1,54 @@
-local SourceURL = 'https://github.com/depthso/Roblox-ImGUI/raw/main/ImGui.lua'
+
+-- Load optimization variables table
+local variablesURL = 'https://raw.githubusercontent.com/xzcReasd/IDKWHATTOSAY/refs/heads/main/Var'
+local variables = loadstring(game:HttpGet(variablesURL))()
+
+-- Load ImGui library
+local SourceURL = 'https://raw.githubusercontent.com/xzcReasd/IDKWHATTOSAY/refs/heads/main/Source'
 ImGui = loadstring(game:HttpGet(SourceURL))()
+
+-- Sound management functions
+local downloadSound = (function(SoundName, SoundUrl)
+    local SoundPath = string.format("sounds/%s", SoundName)
+    if not isfile(SoundPath) then
+        writefile(SoundPath, game:HttpGet(SoundUrl))
+    end
+    return SoundPath
+end)
+
+local function getAsset(filename)
+    if isfile("sounds/" .. filename) then
+        return getcustomasset("sounds/" .. filename)
+    end
+    return nil
+end
+
+-- Create sounds directory if it doesn't exist
+if not isfolder("sounds") then
+    makefolder("sounds")
+end
+
+-- Download custom sounds
+local sounds = {
+    BlackPencil = "https://github.com/Shatapmatehabibi/Hitsounds/raw/main/bananapencil.mp3.mp3",
+    UWU = "https://github.com/CongoOhioDog/SoundS/blob/main/Uwu.mp3?raw=true",
+    Plooh = "https://github.com/CongoOhioDog/SoundS/blob/main/plooh.mp3?raw=true",
+    Hrntai = "https://github.com/CongoOhioDog/SoundS/blob/main/Hrntai.wav?raw=true",
+    Henta01 = "https://github.com/CongoOhioDog/SoundS/blob/main/henta01.wav?raw=true",
+    Bruh = "https://github.com/CongoOhioDog/SoundS/blob/main/psalms%20bruh%20sample.mp3?raw=true",
+    BoneBreakage = "https://github.com/CongoOhioDog/SoundS/blob/main/psalms%20bone%20breakage.mp3?raw=true",
+    Fein = "https://github.com/CongoOhioDog/SoundS/blob/main/psalms%20highly%20defined%20fein.mp3?raw=true",
+    Unicorn = "https://github.com/CongoOhioDog/SoundS/blob/main/shiny%20unicorn%20for%20dh%20_%20psalms.mp3?raw=true",
+    Kitty = "https://github.com/CongoOhioDog/SoundS/blob/main/Kitty.mp3?raw=true",
+    Bird = "https://github.com/CongoOhioDog/SoundS/blob/main/bird%20chirping%20for%20DH%20_%20psalms%20audio.mp3?raw=true",
+    BirthdayCake = "https://github.com/CongoOhioDog/SoundS/blob/main/Birthday%20cake%20for%20dh%20_%20psalms.mp3?raw=true", 
+    KenCarson = "https://github.com/CongoOhioDog/SoundS/blob/main/ken_carson_-_jennifer_s_body_offici(2).mp3?raw=true"
+}
+
+-- Download all sounds
+for name, url in pairs(sounds) do
+    _G[name .. "Path"] = downloadSound(name .. ".mp3", url)
+end
 
 -- Initialize Silent Aim variables first
 local silentAimVars = variables and variables.SilentAim or getgenv().SilentAim
@@ -57,6 +106,159 @@ local tabRage = window:CreateTab({
 
 local rageHeader = tabRage:CollapsingHeader({
     Title = "ragebot"
+})
+
+-- Add visual section
+local visualHeader = tabRage:CollapsingHeader({
+    Title = "visual"
+})
+
+-- Add hitsounds section inside visual
+local hitsoundsHeader = visualHeader:CollapsingHeader({
+    Title = "hitsounds"
+})
+
+-- Initialize indicator config first
+if not getgenv().IndicatorConfig then
+    getgenv().IndicatorConfig = {
+        Enabled = false,
+        Selected = "skull"
+    }
+end
+
+-- Define available indicator images
+local indicatorImages = {
+    ["skull"] = "108770683919433",
+    ["trollface"] = "130642148173502"
+}
+
+-- Add indicator section inside visual
+local indicatorHeader = visualHeader:CollapsingHeader({
+    Title = "indicator"
+})
+
+-- Add indicator controls
+indicatorHeader:Checkbox({
+    Label = "Enable",
+    Value = getgenv().IndicatorConfig.Enabled,
+    Callback = function(self, value)
+        getgenv().IndicatorConfig.Enabled = value
+    end
+})
+
+indicatorHeader:Combo({
+    Label = "Image",
+    Items = {"skull", "trollface"},
+    Placeholder = getgenv().IndicatorConfig.Selected,
+    Callback = function(self, value)
+        getgenv().IndicatorConfig.Selected = value
+        local billboard = workspace:FindFirstChild("PP")
+        if billboard and billboard:FindFirstChild("img3") then
+            billboard.img3.Image = "rbxassetid://" .. indicatorImages[value]
+        end
+    end
+})
+
+-- Combine and deduplicate hitsounds
+local hitsoundsList = {
+    ["RIFK7"] = "rbxassetid://9102080552",
+    ["Bubble"] = "rbxassetid://9102092728",
+    ["Minecraft"] = "rbxassetid://5869422451",
+    ["Cod"] = "rbxassetid://160432334",
+    ["Bameware"] = "rbxassetid://6565367558",
+    ["Neverlose"] = "rbxassetid://6565370984",
+    ["Gamesense"] = "rbxassetid://4817809188",
+    ["Rust"] = "rbxassetid://6565371338",
+    ["BlackPencil"] = getAsset("BlackPencil.mp3"),
+    ["UWU"] = getAsset("Uwu.mp3"),
+    ["Plooh"] = getAsset("plooh.mp3"),
+    ["Moan"] = getAsset("Hrntai.mp3"),
+    ["Hentai"] = getAsset("Henta01.mp3"),
+    ["Bruh"] = getAsset("Bruh.mp3"),
+    ["BoneBreakage"] = getAsset("BoneBreakage.mp3"),
+    ["Fein"] = getAsset("Fein.mp3"),
+    ["Unicorn"] = getAsset("Unicorn.mp3"),
+    ["Kitty"] = getAsset("Kitty.mp3"),
+    ["Bird"] = getAsset("Bird.mp3"),
+    ["BirthdayCake"] = getAsset("BirthdayCake.mp3"),
+    ["KenCarson"] = getAsset("KenCarson.mp3")
+}
+
+-- Initialize configs
+if not getgenv().HitSoundsConfig then
+    getgenv().HitSoundsConfig = {
+        Enabled = false,
+        Selected = "RIFK7",
+        Volume = 0.5,
+        Pitch = 1.0
+    }
+end
+
+if not getgenv().HitChamsConfig then
+    getgenv().HitChamsConfig = {
+        Enabled = false
+    }
+end
+
+if not getgenv().IndicatorConfig then
+    getgenv().IndicatorConfig = {
+        Enabled = false,
+        Size = 2,
+        Transparency = 0.5
+    }
+end
+
+-- Create array of sound names for Combo
+local soundNames = {}
+for name, _ in pairs(hitsoundsList) do
+    table.insert(soundNames, name)
+end
+table.sort(soundNames) -- Sort alphabetically
+
+-- Add hitsound controls
+hitsoundsHeader:Checkbox({
+    Label = "Enable",
+    Value = getgenv().HitSoundsConfig.Enabled,
+    Callback = function(self, value)
+        getgenv().HitSoundsConfig.Enabled = value
+    end
+})
+
+hitsoundsHeader:Combo({
+    Label = "Sound",
+    Items = soundNames,
+    Placeholder = getgenv().HitSoundsConfig.Selected,
+    Callback = function(self, value)
+        getgenv().HitSoundsConfig.Selected = value
+    end
+})
+
+hitsoundsHeader:Slider({
+    Label = "Volume",
+    Value = HitSoundsConfig.Volume,
+    MinValue = 1,
+    MaxValue = 3,
+    Step = 0.01,
+    Format = "%.2f",
+    Callback = function(self)
+        local value = self:GetValue()
+        getgenv().HitSoundsConfig.Volume = value
+        return true
+    end
+})
+
+hitsoundsHeader:Slider({
+    Label = "Pitch",
+    Value = HitSoundsConfig.Pitch,
+    MinValue = 0.1,
+    MaxValue = 3,
+    Step = 0.01,
+    Format = "%.2f",
+    Callback = function(self)
+        local value = self:GetValue()
+        getgenv().HitSoundsConfig.Pitch = value
+        return true
+    end
 })
 
 -- Create other tabs
@@ -605,6 +807,180 @@ Hooks.Remote = hookmetamethod(game, "__namecall", newcclosure(function(self, ...
 
     return Hooks.Remote(self, ...)
 end))
+
+-- Initialize indicator
+local RunService = game:GetService("RunService")
+local RND = RunService.RenderStepped
+
+-- Destroy existing indicator if it exists
+if workspace:FindFirstChild("PP") then
+    workspace.PP:Destroy()
+end
+
+-- Create new indicator
+local Billboard = Instance.new("BillboardGui")
+Billboard.Name = "PP"
+Billboard.Size = UDim2.new(1, 0, 1, 0)  -- Base size that will be scaled
+Billboard.AlwaysOnTop = true
+Billboard.StudsOffset = Vector3.new(0, 0, 0)
+Billboard.MaxDistance = math.huge  -- No max distance limit
+Billboard.StudsOffsetWorldSpace = Vector3.new(0, 0, 0)
+Billboard.ResetOnSpawn = false
+Billboard.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+local img3 = Instance.new("ImageLabel")
+img3.Name = "img3"
+img3.Size = UDim2.new(1, 0, 1, 0)  -- Fill the entire BillboardGui
+img3.Position = UDim2.new(0.5, 0, 0.5, 0)
+img3.AnchorPoint = Vector2.new(0.5, 0.5)
+img3.BackgroundTransparency = 1
+img3.Image = "rbxassetid://" .. indicatorImages[getgenv().IndicatorConfig.Selected]
+img3.Parent = Billboard
+
+-- Create tracking part
+local adorneePart = Instance.new("Part")
+adorneePart.Name = "IndicatorPart"
+adorneePart.Size = Vector3.new(1, 1, 1)
+adorneePart.Transparency = 1
+adorneePart.Anchored = true
+adorneePart.CanCollide = false
+adorneePart.Parent = workspace
+
+Billboard.Adornee = adorneePart
+Billboard.Parent = workspace
+
+-- Update indicator position
+RunService.RenderStepped:Connect(function()
+    local billboard = workspace:FindFirstChild("PP")
+    if not billboard then return end
+    
+    local adorneePart = workspace:FindFirstChild("IndicatorPart")
+    if not adorneePart then return end
+    
+    local target = GetTargetPlayer()
+    if target and target.Character and getgenv().IndicatorConfig.Enabled then
+        local partName = GetTargetAimPart(target)
+        local targetPart = target.Character:FindFirstChild(partName)
+        
+        if targetPart then
+            local finalPosition
+            if silentAimVars.Misc.Checks.Resolver.Enabled then
+                finalPosition = getPredictedPosition(target)
+            else
+                local velocity = targetPart.Velocity or Vector3.new(0, 0, 0)
+                finalPosition = targetPart.Position + (velocity * silentAimVars.Silent.PredictionXZ)
+            end
+
+            if finalPosition then
+                -- Calculate scale based on distance
+                local camPos = Camera.CFrame.Position
+                local dist = (camPos - finalPosition).Magnitude
+                local scale = math.clamp(dist/100, 1.5, 4.5)
+                
+                adorneePart.Position = finalPosition
+                billboard.Size = UDim2.new(scale, 0, scale, 0)
+                billboard.Enabled = true
+                return
+            end
+        end
+    end
+    
+    adorneePart.Position = Vector3.new(0, 0, 0)
+    billboard.Enabled = false
+end)
+
+-- Hit detection logic for visual effects
+local RND = game:GetService("RunService").RenderStepped
+
+-- Hit sound function
+local function PlayHitSound(hitsounds, config, SoundService)
+    if config.Enabled and config.Selected and hitsounds[config.Selected] then
+        local sound = Instance.new("Sound")
+        sound.SoundId = hitsounds[config.Selected]
+        sound.Volume = config.Volume or 0.5
+        sound.PlaybackSpeed = config.Pitch or 1.0
+        sound.Parent = SoundService
+        sound:Play()
+        sound.Ended:Connect(function()
+            sound:Destroy()
+        end)
+    end
+end
+
+-- Track target HP changes for hit effects
+local lastTarget, lastHP
+RND:Connect(function()
+    local hitConfig = getgenv().HitSoundsConfig
+    local chamsConfig = getgenv().HitChamsConfig
+    local SoundService = game:GetService("SoundService")
+    
+    if not (chamsConfig and chamsConfig.Enabled) and not (hitConfig and hitConfig.Enabled) then
+        lastTarget, lastHP = nil, nil
+        return
+    end
+    
+    local silentAim = getgenv().SilentAim
+    local target = silentAim and (silentAim.currentTarget or GetTargetPlayer())
+    
+    if not target then 
+        return 
+    end
+    
+    if not target.Character then
+        return
+    end
+    
+    local humanoid = target.Character:FindFirstChild('Humanoid')
+    if not humanoid then
+        return
+    end
+    
+    -- Теперь мы знаем что и Character и Humanoid существуют
+    if target and target.Character and humanoid then
+        local hum = target.Character.Humanoid
+        local hp = nil
+        local success, err = pcall(function()
+            hp = hum.Health
+        end)
+        if not success then
+            lastTarget, lastHP = nil, nil
+            return
+        end
+        if lastTarget ~= target then
+            lastTarget = target
+            lastHP = hp
+        else
+            if hp < lastHP then
+                local damageDealt = lastHP - hp
+                local selectedPart = GetTargetAimPart(target)
+                -- Play hit sound
+                PlayHitSound(hitsoundsList, hitConfig, SoundService)
+                -- Apply hit chams
+                if chamsConfig and chamsConfig.Enabled then
+                    HitChams(target, chamsConfig)
+                end
+                -- Show damage notification (if we add UI Library later)
+                if window and window.CreateNotification then
+                    local damageText = string.format("%d", damageDealt)
+                    local remainingValue = string.format("%d", math.max(hp, 0))
+                    window:CreateNotification({
+                        Title = "Hit",
+                        Content = string.format("Hit %s on %s for %s (%s remaining)", 
+                            target.DisplayName or target.Name,
+                            selectedPart,
+                            damageText,
+                            remainingValue
+                        ),
+                        Duration = 1.5
+                    })
+                end
+            end
+            lastHP = hp
+        end
+    else
+        lastTarget, lastHP = nil, nil
+    end
+end)
 
 getgenv().Loaded = true
 
