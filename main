@@ -120,6 +120,24 @@ if not getgenv().IndicatorConfig then
     }
 end
 
+if not getgenv().HighlightTargetConfig then
+    getgenv().HighlightTargetConfig = {
+        Enabled = false,
+        Transparency1 = 0.5,
+        Transparency2 = 0.3,
+        Color1 = {
+            R = 255,
+            G = 0,
+            B = 0
+        },
+        Color2 = {
+            R = 0,
+            G = 255,
+            B = 0
+        }
+    }
+end
+
 -- Define available indicator images
 local indicatorImages = {
     ["skull"] = "108770683919433",
@@ -282,6 +300,137 @@ indicatorHeader:Combo({
             local selected = value or "skull"
             billboard.img3.Image = "rbxassetid://" .. (indicatorImages[selected] or indicatorImages["skull"])
         end
+    end
+})
+
+-- Add Highlight target section inside visual
+local highlightTargetHeader = visualHeader:CollapsingHeader({
+    Title = "Highlight target"
+})
+
+-- Highlight target toggle
+highlightTargetHeader:Checkbox({
+    Label = "Enable",
+    Value = getgenv().HighlightTargetConfig.Enabled,
+    Callback = function(self, value)
+        getgenv().HighlightTargetConfig.Enabled = value
+    end
+})
+
+-- Transparency sliders
+highlightTargetHeader:Slider({
+    Label = "Transparency 1",
+    Value = getgenv().HighlightTargetConfig.Transparency1,
+    MinValue = 0,
+    MaxValue = 1,
+    Step = 0.01,
+    Format = "%.2f",
+    Callback = function(self)
+        local value = self:GetValue()
+        getgenv().HighlightTargetConfig.Transparency1 = value
+        return true
+    end
+})
+
+highlightTargetHeader:Slider({
+    Label = "Transparency 2",
+    Value = getgenv().HighlightTargetConfig.Transparency2,
+    MinValue = 0,
+    MaxValue = 1,
+    Step = 0.01,
+    Format = "%.2f",
+    Callback = function(self)
+        local value = self:GetValue()
+        getgenv().HighlightTargetConfig.Transparency2 = value
+        return true
+    end
+})
+
+-- Color 1 header with RGB sliders
+local color1Header = highlightTargetHeader:CollapsingHeader({
+    Title = "Color 1"
+})
+
+color1Header:Slider({
+    Label = "R",
+    Value = getgenv().HighlightTargetConfig.Color1.R,
+    MinValue = 0,
+    MaxValue = 255,
+    Step = 1,
+    Callback = function(self)
+        local value = self:GetValue()
+        getgenv().HighlightTargetConfig.Color1.R = value
+        return true
+    end
+})
+
+color1Header:Slider({
+    Label = "G",
+    Value = getgenv().HighlightTargetConfig.Color1.G,
+    MinValue = 0,
+    MaxValue = 255,
+    Step = 1,
+    Callback = function(self)
+        local value = self:GetValue()
+        getgenv().HighlightTargetConfig.Color1.G = value
+        return true
+    end
+})
+
+color1Header:Slider({
+    Label = "B",
+    Value = getgenv().HighlightTargetConfig.Color1.B,
+    MinValue = 0,
+    MaxValue = 255,
+    Step = 1,
+    Callback = function(self)
+        local value = self:GetValue()
+        getgenv().HighlightTargetConfig.Color1.B = value
+        return true
+    end
+})
+
+-- Color 2 header with RGB sliders
+local color2Header = highlightTargetHeader:CollapsingHeader({
+    Title = "Color 2"
+})
+
+color2Header:Slider({
+    Label = "R",
+    Value = getgenv().HighlightTargetConfig.Color2.R,
+    MinValue = 0,
+    MaxValue = 255,
+    Step = 1,
+    Callback = function(self)
+        local value = self:GetValue()
+        getgenv().HighlightTargetConfig.Color2.R = value
+        return true
+    end
+})
+
+color2Header:Slider({
+    Label = "G",
+    Value = getgenv().HighlightTargetConfig.Color2.G,
+    MinValue = 0,
+    MaxValue = 255,
+    Step = 1,
+    Callback = function(self)
+        local value = self:GetValue()
+        getgenv().HighlightTargetConfig.Color2.G = value
+        return true
+    end
+})
+
+color2Header:Slider({
+    Label = "B",
+    Value = getgenv().HighlightTargetConfig.Color2.B,
+    MinValue = 0,
+    MaxValue = 255,
+    Step = 1,
+    Callback = function(self)
+        local value = self:GetValue()
+        getgenv().HighlightTargetConfig.Color2.B = value
+        return true
     end
 })
 
@@ -534,7 +683,7 @@ getgenv().anarchy['orbit'] = getgenv().anarchy['orbit'] or {
     Enabled = false,
     Keybind = Enum.KeyCode.Q,
     Speed = 15,
-    Height = 0,
+    Height = 15,
     Radius = 15
 }
 local orbitConfig = getgenv().anarchy['orbit']
@@ -566,7 +715,7 @@ orbitHeader:Slider({
     Label = "Speed",
     Value = orbitConfig.Speed,
     MinValue = 1,
-    MaxValue = 100,
+    MaxValue = 50,
     Step = 1,
     Callback = function(self)
         orbitConfig.Speed = self:GetValue()
@@ -576,7 +725,7 @@ orbitHeader:Slider({
 orbitHeader:Slider({
     Label = "Height",
     Value = orbitConfig.Height,
-    MinValue = -50,
+    MinValue = 0,
     MaxValue = 50,
     Step = 1,
     Callback = function(self)
@@ -588,7 +737,7 @@ orbitHeader:Slider({
     Label = "Radius",
     Value = orbitConfig.Radius,
     MinValue = 1,
-    MaxValue = 100,
+    MaxValue = 50,
     Step = 1,
     Callback = function(self)
         orbitConfig.Radius = self:GetValue()
@@ -626,11 +775,12 @@ end
 
 local function updateNetworkedPosition()
     if not orbitConfig.Enabled then return end
-    if TargTp and TargPlr then
-        local Targ = TargPlr
-        if Targ and Targ.Character and Targ.Character:FindFirstChild("HumanoidRootPart") then
+    if TargTp then
+        -- Простая проверка цели (без GetCurrentTarget чтобы избежать ошибок порядка)
+        if TargPlr and TargPlr.Character and TargPlr.Character:FindFirstChild("HumanoidRootPart") then
             local RootPart = LocalPlr.Character and LocalPlr.Character:FindFirstChild("HumanoidRootPart")
             if not RootPart then return end
+            
             local realPosition = RootPart.Position
             local realVelocity = RootPart.AssemblyLinearVelocity
             local time = tick() * orbitConfig.Speed
@@ -639,34 +789,24 @@ local function updateNetworkedPosition()
             local offsetX = math.cos(time) * radius
             local offsetZ = math.sin(time) * radius
             local offsetY = 0
-            local targetCFrame = Targ.Character.HumanoidRootPart.CFrame
+            
+            local targetCFrame = TargPlr.Character.HumanoidRootPart.CFrame
             local center = targetCFrame.Position + Vector3.new(0, height, 0)
             RootPart.CFrame = CFrame.new(center + Vector3.new(offsetX, offsetY, offsetZ), center)
             RootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
             task.wait()
             RootPart.CFrame = CFrame.new(realPosition)
             RootPart.AssemblyLinearVelocity = realVelocity
+        else
+            -- Нет валидной цели - отключаем орбит
+            TargTp = false
+            TargPlr = nil
+            print("[ORBIT] Орбит отключен - нет валидной цели")
         end
     end
 end
 
-UserInputService.InputBegan:Connect(function(input)
-    if not orbitConfig.Enabled then return end
-    if input.KeyCode == orbitConfig.Keybind then
-        if TargPlr then
-            TargTp = not TargTp
-            if not TargTp then
-                TargPlr = nil
-            end
-        else
-            local closestPlayer = GetClosestPlayer2()
-            if closestPlayer then
-                TargPlr = closestPlayer
-                TargTp = true
-            end
-        end
-    end
-end)
+-- Orbit keybind handler будет добавлен после определения GetTargetPlayer()
 
 RunService.Heartbeat:Connect(updateNetworkedPosition)
 
@@ -907,6 +1047,143 @@ local function GetTargetPlayer()
         return GetClosestPlayerToCursor()
     end
 end
+
+-- TARGET INFO SYSTEM - Универсальная структура для хранения информации о цели
+local isTarget = {
+    Player = nil,
+    Character = nil,
+    Name = "",
+    -- Основные части тела
+    HumanoidRootPart = nil,
+    Head = nil,
+    Torso = nil,
+    Humanoid = nil,
+    -- Позиционные данные
+    Position = Vector3.new(0, 0, 0),
+    CFrame = CFrame.new(),
+    Velocity = Vector3.new(0, 0, 0),
+    -- Состояние
+    Health = 0,
+    MaxHealth = 0,
+    IsAlive = false,
+    IsKnocked = false,
+    -- Расстояние и углы
+    Distance = 0,
+    ScreenPosition = Vector2.new(0, 0),
+    OnScreen = false,
+    -- Временные метки
+    LastUpdate = 0,
+    Valid = false
+}
+
+-- Функция обновления информации о цели
+local function UpdateTargetInfo(targetPlayer)
+    if not targetPlayer or not targetPlayer.Character then
+        isTarget.Valid = false
+        isTarget.Player = nil
+        isTarget.Character = nil
+        return false
+    end
+    
+    local character = targetPlayer.Character
+    local hrp = character:FindFirstChild("HumanoidRootPart")
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    
+    if not hrp or not humanoid then
+        isTarget.Valid = false
+        return false
+    end
+    
+    -- Обновляем всю информацию
+    isTarget.Player = targetPlayer
+    isTarget.Character = character
+    isTarget.Name = targetPlayer.Name
+    
+    -- Части тела
+    isTarget.HumanoidRootPart = hrp
+    isTarget.Head = character:FindFirstChild("Head")
+    isTarget.Torso = character:FindFirstChild("Torso") or character:FindFirstChild("UpperTorso")
+    isTarget.Humanoid = humanoid
+    
+    -- Позиционные данные
+    isTarget.Position = hrp.Position
+    isTarget.CFrame = hrp.CFrame
+    isTarget.Velocity = hrp.AssemblyLinearVelocity or hrp.Velocity or Vector3.new(0, 0, 0)
+    
+    -- Состояние
+    isTarget.Health = humanoid.Health
+    isTarget.MaxHealth = humanoid.MaxHealth
+    isTarget.IsAlive = humanoid.Health > 0
+    isTarget.IsKnocked = isPlayerKO and isPlayerKO(targetPlayer) or false
+    
+    -- Расстояние и экранные координаты
+    local localPlayer = LocalPlayer
+    if localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        isTarget.Distance = (isTarget.Position - localPlayer.Character.HumanoidRootPart.Position).Magnitude
+    end
+    
+    local screenPos, onScreen = Camera:WorldToViewportPoint(isTarget.Position)
+    isTarget.ScreenPosition = Vector2.new(screenPos.X, screenPos.Y)
+    isTarget.OnScreen = onScreen
+    
+    -- Временные метки
+    isTarget.LastUpdate = tick()
+    isTarget.Valid = true
+    
+    return true
+end
+
+-- Функция получения актуальной цели с полной информацией
+local function GetCurrentTarget()
+    local targetPlayer = GetTargetPlayer()
+    if UpdateTargetInfo(targetPlayer) then
+        return isTarget
+    end
+    return nil
+end
+
+-- ORBIT KEYBIND HANDLER (использует новую систему isTarget)
+UserInputService.InputBegan:Connect(function(input)
+    if not orbitConfig.Enabled then return end
+    if input.KeyCode == orbitConfig.Keybind then
+        if TargPlr then
+            -- Переключаем орбит вкл/выкл
+            TargTp = not TargTp
+            if not TargTp then
+                TargPlr = nil
+                print("[ORBIT] Орбит выключен")
+            else
+                print("[ORBIT] Орбит включен для: " .. TargPlr.Name)
+            end
+        else
+            -- Получаем полную информацию о цели через isTarget
+            local targetInfo = GetCurrentTarget()
+            
+            if targetInfo and targetInfo.Valid then
+                TargPlr = targetInfo.Player
+                TargTp = true
+                print(string.format("[ORBIT] Орбит активирован!"))
+                print(string.format("  Цель: %s", targetInfo.Name))
+                print(string.format("  Здоровье: %.0f/%.0f", targetInfo.Health, targetInfo.MaxHealth))
+                print(string.format("  Расстояние: %.1f", targetInfo.Distance))
+                print(string.format("  Позиция: %.1f, %.1f, %.1f", targetInfo.Position.X, targetInfo.Position.Y, targetInfo.Position.Z))
+                if targetInfo.IsKnocked then
+                    print("  Состояние: Нокаут")
+                elseif not targetInfo.IsAlive then
+                    print("  Состояние: Мертв")
+                else
+                    print("  Состояние: Жив")
+                end
+            else
+                print("[ORBIT] Нет доступной цели аимбота!")
+                print("  Проверьте:")
+                print("  - Включен ли аимбот")
+                print("  - Есть ли игроки в поле зрения")
+                print("  - Проходят ли цели проверки аимбота")
+            end
+        end
+    end
+end)
 
 -- Initialize mouse variable
 local Mouse = LocalPlayer:GetMouse()
@@ -1301,6 +1578,84 @@ RND:Connect(function()
     end
 end)
 
+-- Highlight Target Logic
+local currentHighlight = nil
+
+-- Function to update highlight for target
+local function updateHighlight(target)
+    local config = getgenv().HighlightTargetConfig
+    
+    if not config or not config.Enabled then
+        if currentHighlight then
+            pcall(function()
+                currentHighlight:Destroy()
+                currentHighlight = nil
+            end)
+        end
+        return
+    end
+
+    -- If highlight already exists, check if we need to move it to new target
+    if currentHighlight then
+        if not target or not target.Character or currentHighlight.Parent ~= target.Character then
+            -- Target changed or disappeared, remove old highlight
+            pcall(function()
+                currentHighlight:Destroy()
+                currentHighlight = nil
+            end)
+        end
+    end
+
+    -- If no highlight exists and target is valid, create new one
+    if not currentHighlight and target and target.Character then
+        pcall(function()
+            local highlight = Instance.new("Highlight")
+            
+            -- Use Color1 for outline and Color2 for fill
+            highlight.OutlineColor = Color3.fromRGB(
+                config.Color1.R,
+                config.Color1.G,
+                config.Color1.B
+            )
+            highlight.FillColor = Color3.fromRGB(
+                config.Color2.R,
+                config.Color2.G,
+                config.Color2.B
+            )
+            
+            -- Use transparency settings
+            highlight.OutlineTransparency = config.Transparency1
+            highlight.FillTransparency = config.Transparency2
+            highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+            highlight.Parent = target.Character
+            currentHighlight = highlight
+        end)
+    elseif currentHighlight and target and target.Character then
+        -- Update existing highlight colors and transparency
+        pcall(function()
+            currentHighlight.OutlineColor = Color3.fromRGB(
+                config.Color1.R,
+                config.Color1.G,
+                config.Color1.B
+            )
+            currentHighlight.FillColor = Color3.fromRGB(
+                config.Color2.R,
+                config.Color2.G,
+                config.Color2.B
+            )
+            currentHighlight.OutlineTransparency = config.Transparency1
+            currentHighlight.FillTransparency = config.Transparency2
+        end)
+    end
+end
+
+-- Connect highlight update to main game loop
+RND:Connect(function()
+    local silentAim = getgenv().SilentAim
+    local target = silentAim and (silentAim.currentTarget or GetTargetPlayer())
+    updateHighlight(target)
+end)
+
 local savePosConfig = getgenv().SavePosConfig or {
     Enabled = false,
     OffsetX = 0,
@@ -1390,15 +1745,25 @@ RunService.Heartbeat:Connect(function(dt)
     myRoot.CFrame = CFrame.new(desiredPos, targetPart.Position + targetPart.CFrame.LookVector*5)
 end)
 
-getgenv().Loaded = true
+local viewTargetConfig = getgenv().ViewTargetConfig or { Enabled = false }
+getgenv().ViewTargetConfig = viewTargetConfig
 
--- VIEW TARGET TOGGLE
-getgenv().ViewAimbotTarget = getgenv().ViewAimbotTarget or false
 rageHeader:Checkbox({
     Label = "View target",
-    Value = getgenv().ViewAimbotTarget,
+    Value = viewTargetConfig.Enabled,
     Callback = function(self, value)
-        getgenv().ViewAimbotTarget = value
+        viewTargetConfig.Enabled = value
+        if not value then
+            -- Вернуть камеру на игрока
+            local lp = game:GetService("Players").LocalPlayer
+            local camera = game:GetService("Workspace").CurrentCamera
+            if lp.Character then
+                local playerHumanoid = lp.Character:FindFirstChildOfClass("Humanoid")
+                if playerHumanoid then
+                    camera.CameraSubject = playerHumanoid
+                end
+            end
+        end
     end
 })
 
@@ -1422,9 +1787,11 @@ local function setCameraToAimbotTarget(target)
 end
 
 RunService.Heartbeat:Connect(function()
-    if getgenv().ViewAimbotTarget then
+    if viewTargetConfig.Enabled then
         local target = GetTargetPlayer and GetTargetPlayer() or nil
         setCameraToAimbotTarget(target)
     end
 end)
+
+getgenv().Loaded = true
 
