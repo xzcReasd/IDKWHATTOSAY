@@ -91,6 +91,41 @@ if not silentAimVars then
     getgenv().SilentAim = silentAimVars
 end
 
+-- Initialize configs
+if not getgenv().HitSoundsConfig then
+    getgenv().HitSoundsConfig = {
+        Enabled = false,
+        Selected = "RIFK7",
+        Volume = 0.5,
+        Pitch = 1.0
+    }
+end
+
+if not getgenv().HitChamsConfig then
+    getgenv().HitChamsConfig = {
+        Enabled = false,
+        Transparency = 0.5,
+        Duration = 1.0,
+        Color = Color3.fromRGB(255, 0, 0),
+        Material = Enum.Material.ForceField
+    }
+end
+
+if not getgenv().IndicatorConfig then
+    getgenv().IndicatorConfig = {
+        Enabled = false,
+        Selected = "skull",
+        Size = 2,
+        Transparency = 0.5
+    }
+end
+
+-- Define available indicator images
+local indicatorImages = {
+    ["skull"] = "108770683919433",
+    ["trollface"] = "130642148173502"
+}
+
 -- Create main window
 local window = ImGui:CreateWindow({
     Title = "Freedom.TAPBOT",
@@ -118,19 +153,68 @@ local hitsoundsHeader = visualHeader:CollapsingHeader({
     Title = "hitsounds"
 })
 
--- Initialize indicator config first
-if not getgenv().IndicatorConfig then
-    getgenv().IndicatorConfig = {
-        Enabled = false,
-        Selected = "skull"
-    }
-end
+-- Добавить секцию HitChams в visual
+local hitchamsHeader = visualHeader:CollapsingHeader({
+    Title = "hitchams"
+})
 
--- Define available indicator images
-local indicatorImages = {
-    ["skull"] = "108770683919433",
-    ["trollface"] = "130642148173502"
-}
+hitchamsHeader:Checkbox({
+    Label = "Включить HitChams",
+    Value = getgenv().HitChamsConfig.Enabled,
+    Callback = function(self, value)
+        getgenv().HitChamsConfig.Enabled = value
+    end
+})
+
+hitchamsHeader:Slider({
+    Label = "Прозрачность",
+    Value = getgenv().HitChamsConfig.Transparency,
+    MinValue = 0,
+    MaxValue = 1,
+    Step = 0.01,
+    Format = "%.2f",
+    Callback = function(self)
+        local value = self:GetValue()
+        getgenv().HitChamsConfig.Transparency = value
+        return true
+    end
+})
+
+hitchamsHeader:Slider({
+    Label = "Длительность",
+    Value = getgenv().HitChamsConfig.Duration,
+    MinValue = 0.1,
+    MaxValue = 5,
+    Step = 0.1,
+    Format = "%.1f",
+    Callback = function(self)
+        local value = self:GetValue()
+        getgenv().HitChamsConfig.Duration = value
+        return true
+    end
+})
+
+hitchamsHeader:Combo({
+    Label = "Материал",
+    Items = {"ForceField", "Neon", "Plastic", "SmoothPlastic", "Glass"},
+    Placeholder = tostring(getgenv().HitChamsConfig.Material.Name),
+    Callback = function(self, value)
+        getgenv().HitChamsConfig.Material = Enum.Material[value]
+    end
+})
+
+hitchamsHeader:InputText({
+    Label = "Цвет (R,G,B)",
+    Value = string.format("%d,%d,%d", getgenv().HitChamsConfig.Color.R*255, getgenv().HitChamsConfig.Color.G*255, getgenv().HitChamsConfig.Color.B*255),
+    PlaceHolder = "255,0,0",
+    Callback = function(self, value)
+        local r,g,b = value:match("(%d+),(%d+),(%d+)")
+        r,g,b = tonumber(r), tonumber(g), tonumber(b)
+        if r and g and b then
+            getgenv().HitChamsConfig.Color = Color3.fromRGB(r,g,b)
+        end
+    end
+})
 
 -- Add indicator section inside visual
 local indicatorHeader = visualHeader:CollapsingHeader({
@@ -149,12 +233,13 @@ indicatorHeader:Checkbox({
 indicatorHeader:Combo({
     Label = "Image",
     Items = {"skull", "trollface"},
-    Placeholder = getgenv().IndicatorConfig.Selected,
+    Placeholder = getgenv().IndicatorConfig.Selected or "skull",
     Callback = function(self, value)
         getgenv().IndicatorConfig.Selected = value
         local billboard = workspace:FindFirstChild("PP")
         if billboard and billboard:FindFirstChild("img3") then
-            billboard.img3.Image = "rbxassetid://" .. indicatorImages[value]
+            local selected = value or "skull"
+            billboard.img3.Image = "rbxassetid://" .. (indicatorImages[selected] or indicatorImages["skull"])
         end
     end
 })
@@ -183,30 +268,6 @@ local hitsoundsList = {
     ["BirthdayCake"] = getAsset("BirthdayCake.mp3"),
     ["KenCarson"] = getAsset("KenCarson.mp3")
 }
-
--- Initialize configs
-if not getgenv().HitSoundsConfig then
-    getgenv().HitSoundsConfig = {
-        Enabled = false,
-        Selected = "RIFK7",
-        Volume = 0.5,
-        Pitch = 1.0
-    }
-end
-
-if not getgenv().HitChamsConfig then
-    getgenv().HitChamsConfig = {
-        Enabled = false
-    }
-end
-
-if not getgenv().IndicatorConfig then
-    getgenv().IndicatorConfig = {
-        Enabled = false,
-        Size = 2,
-        Transparency = 0.5
-    }
-end
 
 -- Create array of sound names for Combo
 local soundNames = {}
@@ -834,7 +895,8 @@ img3.Size = UDim2.new(1, 0, 1, 0)  -- Fill the entire BillboardGui
 img3.Position = UDim2.new(0.5, 0, 0.5, 0)
 img3.AnchorPoint = Vector2.new(0.5, 0.5)
 img3.BackgroundTransparency = 1
-img3.Image = "rbxassetid://" .. indicatorImages[getgenv().IndicatorConfig.Selected]
+local selected = getgenv().IndicatorConfig.Selected or "skull"
+img3.Image = "rbxassetid://" .. (indicatorImages[selected] or indicatorImages["skull"])
 img3.Parent = Billboard
 
 -- Create tracking part
@@ -903,6 +965,80 @@ local function PlayHitSound(hitsounds, config, SoundService)
         sound:Play()
         sound.Ended:Connect(function()
             sound:Destroy()
+        end)
+    end
+end
+
+-- Реализация функции HitChams
+local TweenService = game:GetService("TweenService")
+function HitChams(Player, Config)
+    if not (Config and Config.Enabled) then return end
+    if Player and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
+        Player.Character.Archivable = true
+        local Cloned = Player.Character:Clone()
+        Cloned.Name = "Player Clone"
+        local BodyParts = {
+            "Head", "UpperTorso", "LowerTorso",
+            "LeftUpperArm", "LeftLowerArm", "LeftHand",
+            "RightUpperArm", "RightLowerArm", "RightHand",
+            "LeftUpperLeg", "LeftLowerLeg", "LeftFoot",
+            "RightUpperLeg", "RightLowerLeg", "RightFoot"
+        }
+        for _, Part in ipairs(Cloned:GetChildren()) do
+            if Part:IsA("BasePart") then
+                local PartValid = false
+                for _, validPart in ipairs(BodyParts) do
+                    if Part.Name == validPart then
+                        PartValid = true
+                        break
+                    end
+                end
+                if not PartValid then
+                    Part:Destroy()
+                end
+            elseif Part:IsA("Accessory") or Part:IsA("Tool") or Part.Name == "face" or Part:IsA("Shirt") or Part:IsA("Pants") or Part:IsA("Hat") then
+                Part:Destroy()
+            end
+        end
+        if Cloned:FindFirstChild("Humanoid") then
+            Cloned.Humanoid:Destroy()
+        end
+        for _, BodyPart in ipairs(Cloned:GetChildren()) do
+            if BodyPart:IsA("BasePart") then
+                BodyPart.CanCollide = false
+                BodyPart.Anchored = true
+                BodyPart.Transparency = Config.Transparency
+                BodyPart.Color = Config.Color
+                BodyPart.Material = Config.Material
+            end
+        end
+        if Cloned:FindFirstChild("Head") then
+            local Head = Cloned.Head
+            Head.Transparency = Config.Transparency
+            Head.Color = Config.Color
+            Head.Material = Config.Material
+            if Head:FindFirstChild("face") then
+                Head.face:Destroy()
+            end
+        end
+        Cloned.Parent = game.Workspace
+        local tweenInfo = TweenInfo.new(
+            Config.Duration,
+            Enum.EasingStyle.Sine,
+            Enum.EasingDirection.InOut,
+            0,
+            false
+        )
+        for _, BodyPart in ipairs(Cloned:GetChildren()) do
+            if BodyPart:IsA("BasePart") then
+                local tween = TweenService:Create(BodyPart, tweenInfo, { Transparency = 1 })
+                tween:Play()
+            end
+        end
+        task.delay(Config.Duration, function()
+            if Cloned and Cloned.Parent then
+                Cloned:Destroy()
+            end
         end)
     end
 end
