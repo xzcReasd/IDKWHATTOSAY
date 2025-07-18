@@ -138,6 +138,18 @@ if not getgenv().HighlightTargetConfig then
     }
 end
 
+if not getgenv().TracerToTargetConfig then
+    getgenv().TracerToTargetConfig = {
+        Enabled = false,
+        Thickness = 2,
+        Color = {
+            R = 255,
+            G = 255,
+            B = 255
+        }
+    }
+end
+
 -- Define available indicator images
 local indicatorImages = {
     ["skull"] = "108770683919433",
@@ -508,6 +520,78 @@ hitsoundsHeader:Slider({
     Callback = function(self)
         local value = self:GetValue()
         getgenv().HitSoundsConfig.Pitch = value
+        return true
+    end
+})
+
+-- Add TracerToTarget section inside visual
+local tracerToTargetHeader = visualHeader:CollapsingHeader({
+    Title = "TracerToTarget"
+})
+
+-- TracerToTarget enable checkbox
+tracerToTargetHeader:Checkbox({
+    Label = "Enable",
+    Value = getgenv().TracerToTargetConfig.Enabled,
+    Callback = function(self, value)
+        getgenv().TracerToTargetConfig.Enabled = value
+    end
+})
+
+-- TracerToTarget thickness slider
+tracerToTargetHeader:Slider({
+    Label = "Thickness",
+    Value = getgenv().TracerToTargetConfig.Thickness,
+    MinValue = 1,
+    MaxValue = 10,
+    Step = 1,
+    Callback = function(self)
+        local value = self:GetValue()
+        getgenv().TracerToTargetConfig.Thickness = value
+        return true
+    end
+})
+
+-- TracerToTarget color header with RGB sliders
+local tracerColorHeader = tracerToTargetHeader:CollapsingHeader({
+    Title = "Color"
+})
+
+tracerColorHeader:Slider({
+    Label = "R",
+    Value = getgenv().TracerToTargetConfig.Color.R,
+    MinValue = 0,
+    MaxValue = 255,
+    Step = 1,
+    Callback = function(self)
+        local value = self:GetValue()
+        getgenv().TracerToTargetConfig.Color.R = value
+        return true
+    end
+})
+
+tracerColorHeader:Slider({
+    Label = "G",
+    Value = getgenv().TracerToTargetConfig.Color.G,
+    MinValue = 0,
+    MaxValue = 255,
+    Step = 1,
+    Callback = function(self)
+        local value = self:GetValue()
+        getgenv().TracerToTargetConfig.Color.G = value
+        return true
+    end
+})
+
+tracerColorHeader:Slider({
+    Label = "B",
+    Value = getgenv().TracerToTargetConfig.Color.B,
+    MinValue = 0,
+    MaxValue = 255,
+    Step = 1,
+    Callback = function(self)
+        local value = self:GetValue()
+        getgenv().TracerToTargetConfig.Color.B = value
         return true
     end
 })
@@ -1790,6 +1874,61 @@ RunService.Heartbeat:Connect(function()
     if viewTargetConfig.Enabled then
         local target = GetTargetPlayer and GetTargetPlayer() or nil
         setCameraToAimbotTarget(target)
+    end
+end)
+
+-- TracerToTarget drawing functionality
+local tracerLine = nil
+
+-- Initialize tracer line
+if Drawing then
+    tracerLine = Drawing.new("Line")
+    tracerLine.Visible = false
+    tracerLine.Transparency = 1
+end
+
+-- Update tracer line
+RunService.Heartbeat:Connect(function()
+    local config = getgenv().TracerToTargetConfig
+    
+    if not config or not config.Enabled or not tracerLine then
+        if tracerLine then
+            tracerLine.Visible = false
+        end
+        return
+    end
+    
+    local target = GetTargetPlayer and GetTargetPlayer() or nil
+    
+    if target and target.Character then
+        local upperTorso = target.Character:FindFirstChild("UpperTorso")
+        
+        if upperTorso then
+            local camera = workspace.CurrentCamera
+            local userInputService = game:GetService("UserInputService")
+            
+            -- Get screen position of target's UpperTorso
+            local targetScreenPos, onScreen = camera:WorldToViewportPoint(upperTorso.Position)
+            
+            if onScreen then
+                -- Get accurate mouse position
+                local mouseLocation = userInputService:GetMouseLocation()
+                
+                -- Update tracer line properties
+                tracerLine.From = Vector2.new(mouseLocation.X, mouseLocation.Y)
+                tracerLine.To = Vector2.new(targetScreenPos.X, targetScreenPos.Y)
+                tracerLine.Color = Color3.fromRGB(config.Color.R, config.Color.G, config.Color.B)
+                tracerLine.Thickness = config.Thickness
+                tracerLine.Transparency = 1
+                tracerLine.Visible = true
+            else
+                tracerLine.Visible = false
+            end
+        else
+            tracerLine.Visible = false
+        end
+    else
+        tracerLine.Visible = false
     end
 end)
 
